@@ -1,3 +1,33 @@
+<?php
+ob_start(); // 🔥 penting
+session_start();
+require '../conection.php';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    $username = trim($_POST['usn'] ?? '');
+    $password = trim($_POST['pwd'] ?? '');
+
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($user && password_verify($password, $user['password'])) {
+
+        session_regenerate_id(true);
+
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['username'] = $user['username'];
+        $_SESSION['login'] = true;
+
+        header("Location: index.php");
+        exit;
+
+    } else {
+        $error = "Username atau password salah!";
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,33 +39,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 
 </head>
+
 <body>
-    <?php
-    session_start();
-    require '../conection.php';
-
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-        $username = $_POST['usn'];
-        $password = $_POST['pwd'];
-
-        // 1. Cari user berdasarkan username
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
-        $stmt->execute([$username]);
-        $user = $stmt->fetch();
-
-        // 2. Verifikasi user dan password
-        if ($user && password_verify($password, $user['password'])) {
-            // Login sukses, buat session
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-
-            header("Location: index.php");
-            exit;
-        } else {
-            $error = "Username atau password salah!";
-        }
-    }
-    ?>
     <div class="d-flex justify-content-center align-items-center vh-100">
         <div class="col-7 col-sm-5 col-md-4 col-lg-2">
             <form method="POST">
